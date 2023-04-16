@@ -3,7 +3,8 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const mongoose = require('mongoose');
-const md5=require("md5");
+const bcrypt=require("bcrypt");
+const saltRound=10;
 
 const app = express();
 
@@ -38,33 +39,54 @@ app.get("/register",function(req,res){
 });
 
 app.post("/register",function(req,res){
-    const newUser = new User({
-        email : req.body.username,
-        password : md5(req.body.password)
-    });
-    async function fun1(){
+    async function fun3(){
         try{
-            await newUser.save();
-            await res.render("secrets");
+            const pass =await bcrypt.hash(req.body.password,saltRound)
+            const newUser = new User({
+                email : req.body.username,
+                password : pass
+            });
+            async function fun1(){
+                try{
+                    await newUser.save();
+                    await res.render("secrets");
+                }
+                catch(err){
+                    console.log(err.message);
+                }
+            }
+            fun1();
+            
         }
         catch(err){
             console.log(err.message);
         }
     }
-    fun1();
+    fun3();
+   
 });
 
 app.post("/login",function(req,res){
     const username=req.body.username;
-    const password=md5(req.body.password);
+    const password=req.body.password;
+
+
    
     async function fun2(){
         try{
             const data = await User.findOne({email:username});
-            if(data.password === password){
-
-                res.render("secrets");
+            async function fun4(){
+                try{
+                    const result = await bcrypt.compare(password,data.password);
+                    if(result === true){
+                        res.render("secrets");
+                    }
+                }
+                catch(err){
+                    console.log(err.message);
+                }
             }
+            fun4();
         }
         catch(err){
             console.log(err.message);
